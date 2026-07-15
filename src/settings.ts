@@ -1,38 +1,54 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
-import MyPlugin from './main';
+import { App, PluginSettingTab, type SettingDefinitionItem } from 'obsidian';
+import DailyNotesFromOthersPlugin from './main';
 
-export interface MyPluginSettings {
-	mySetting: string;
+export interface PluginSettings {
+	notesLocation: string;
+	watchFileCreation: boolean;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default',
+export const DEFAULT_SETTINGS: PluginSettings = {
+	notesLocation: '',
+	watchFileCreation: false,
 };
 
-export class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+export class SettingsTab extends PluginSettingTab {
+	plugin: DailyNotesFromOthersPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: DailyNotesFromOthersPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Settings #1')
-			.setDesc("It's a secret")
-			.addText((text) =>
-				text
-					.setPlaceholder('Enter your secret')
-					.setValue(this.plugin.settings.mySetting)
-					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
-						await this.plugin.saveSettings();
-					}),
-			);
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: 'Notes location',
+				control: {
+					type: 'folder',
+					key: 'notesLocation',
+					includeRoot: false,
+				},
+			},
+			{ name: 'Watch file creation', control: { type: 'toggle', key: 'watchFileCreation' } },
+		];
 	}
+
+	// display(): void {
+	// 	const { containerEl } = this;
+	//
+	// 	containerEl.empty();
+	//
+	// 	new Setting(containerEl)
+	// 		.setName('Notes location')
+	// 		.setDesc("Folder to watch for other notes")
+	// 		.addText((text) =>
+	// 			text
+	// 				.setPlaceholder('e.g. Voicenotes')
+	// 				.setValue(this.plugin.settings.notesLocation)
+	// 				.onChange(async (value) => {
+	// 					this.plugin.settings.notesLocation = value;
+	// 					await this.plugin.saveSettings();
+	// 				}),
+	// 		);
+	// }
 }
