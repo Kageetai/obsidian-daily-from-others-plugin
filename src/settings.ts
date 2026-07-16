@@ -4,11 +4,13 @@ import DailyNotesFromOthersPlugin from './main';
 export interface PluginSettings {
 	notesLocation: string;
 	watchFileCreation: boolean;
+	dryRun: boolean;
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
 	notesLocation: '',
 	watchFileCreation: false,
+	dryRun: false,
 };
 
 export class SettingsTab extends PluginSettingTab {
@@ -29,26 +31,15 @@ export class SettingsTab extends PluginSettingTab {
 					includeRoot: false,
 				},
 			},
-			{ name: 'Watch file creation', control: { type: 'toggle', key: 'watchFileCreation' } },
+			{
+				name: 'Watch file creation',
+				control: { type: 'toggle', key: 'watchFileCreation' },
+			},
+			{
+				name: 'Dry run',
+				desc: "Only check for missing daily notes, don't create them",
+				control: { type: 'toggle', key: 'dryRun' },
+			},
 		];
 	}
-
-	// display(): void {
-	// 	const { containerEl } = this;
-	//
-	// 	containerEl.empty();
-	//
-	// 	new Setting(containerEl)
-	// 		.setName('Notes location')
-	// 		.setDesc("Folder to watch for other notes")
-	// 		.addText((text) =>
-	// 			text
-	// 				.setPlaceholder('e.g. Voicenotes')
-	// 				.setValue(this.plugin.settings.notesLocation)
-	// 				.onChange(async (value) => {
-	// 					this.plugin.settings.notesLocation = value;
-	// 					await this.plugin.saveSettings();
-	// 				}),
-	// 		);
-	// }
 }

@@ -1,53 +1,108 @@
+import { MarkdownView, moment, Plugin, TFile } from 'obsidian';
+import { DEFAULT_SETTINGS, PluginSettings, SettingsTab } from './settings';
 import {
-	Editor,
-	MarkdownView,
-	MarkdownFileInfo,
-	Modal,
-	Notice,
-	Plugin,
-} from 'obsidian';
+	createDailyNote,
+	DEFAULT_DAILY_NOTE_FORMAT,
+	getAllDailyNotes,
+	getDailyNoteSettings,
+	getDateUID,
+} from 'obsidian-daily-notes-interface';
+import { ResultsModal } from './resultsModal';
 import {
-	DEFAULT_SETTINGS,
-	PluginSettings,
-	SettingsTab,
-} from './settings';
-
-// Remember to rename these classes and interfaces!
+	findDateInFilename,
+	getFilenameDateFormat,
+} from './utils/findDateInFilename';
 
 export default class DailyNotesFromOthersPlugin extends Plugin {
 	settings!: PluginSettings;
+
+	getFormat = () =>
+		getFilenameDateFormat(
+			getDailyNoteSettings().format,
+			DEFAULT_DAILY_NOTE_FORMAT,
+		);
+
+	findAllMissingDailyNotes = () => {
+		const existingOrSeenDates = new Set(Object.keys(getAllDailyNotes()));
+		const format = this.getFormat();
+
+		return this.app.vault
+			.getMarkdownFiles()
+			.filter((f) => f.path.startsWith(this.settings.notesLocation))
+			.filter((f) => {
+				const date = findDateInFilename(f.basename, format, moment);
+
+				if (!date) {
+					return false;
+				}
+
+				const dateUid = getDateUID(date);
+
+				if (existingOrSeenDates.has(dateUid)) {
+					return false;
+				}
+
+				existingOrSeenDates.add(dateUid);
+				return true;
+			});
+	};
+
+	createDailyNotes = async (files: TFile[]) => {
+		const existingOrCreatedDates = new Set(Object.keys(getAllDailyNotes()));
+		const format = this.getFormat();
+
+		for (const file of files) {
+			const date = findDateInFilename(file.basename, format, moment);
+
+			if (!date) {
+				continue;
+			}
+
+			const dateUid = getDateUID(date);
+			if (existingOrCreatedDates.has(dateUid)) {
+				continue;
+			}
+
+			try {
+				const createdFile = await createDailyNote(date);
+				if (createdFile) {
+					existingOrCreatedDates.add(dateUid);
+				}
+			} catch (error) {
+				console.error(
+					`Failed to create a daily note for "${file.path}".`,
+					error,
+				);
+			}
+		}
+	};
+
+	openModalOrCreateDailyNotes = () => {
+		const files = this.findAllMissingDailyNotes();
+
+		if (this.settings.dryRun) {
+			new ResultsModal(this.app, files).open();
+			return;
+		}
+
+		void this.createDailyNotes(files);
+	};
 
 	async onload() {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+		this.addRibbonIcon(
+			'calendar-plus',
+			'Create all daily notes',
+			this.openModalOrCreateDailyNotes,
+		);
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: 'open-modal-simple',
 			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			},
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (
-				editor: Editor,
-				_ctx: MarkdownView | MarkdownFileInfo,
-			) => {
-				editor.replaceSelection('Sample editor command');
-			},
+			callback: this.openModalOrCreateDailyNotes,
 		});
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
@@ -61,7 +116,7 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						new SampleModal(this.app).open();
+						// new SampleModal(this.app).open();
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
@@ -71,19 +126,23 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 			},
 		});
 
+		if (this.settings.watchFileCreation) {
+			this.app.workspace.onLayoutReady(() => {
+				this.registerEvent(
+					this.app.vault.on('create', (file) => {
+						if (
+							file instanceof TFile &&
+							file.path.startsWith(this.settings.notesLocation)
+						) {
+							void this.createDailyNotes([file]);
+						}
+					}),
+				);
+			});
+		}
+
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SettingsTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(activeDocument, 'click', (_evt: MouseEvent) => {
-			new Notice('Click');
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(
-			window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000),
-		);
 	}
 
 	onunload() {}
@@ -94,17 +153,5 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			(await this.loadData()) as Partial<PluginSettings>,
 		);
-	}
-}
-
-class SampleModal extends Modal {
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
 	}
 }
