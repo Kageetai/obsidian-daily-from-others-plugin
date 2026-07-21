@@ -11,6 +11,7 @@ Replace the persisted **Dry run** setting with an on-demand command named **List
 - The existing **Create all daily notes** command always creates all missing daily notes.
 - A new command named **List all missing daily notes**, with the stable ID `list-all-missing-daily-notes`, scans the configured notes location and opens the existing results modal.
 - Listing notes never creates or modifies a note.
+- When either bulk command finds no missing daily notes, it shows `No missing daily notes found.` and returns without creating notes or opening an empty modal.
 - Existing saved `dryRun` data is ignored. No migration is needed because removing the typed setting and control makes the stale property behaviorally inert.
 
 ## Implementation design
@@ -24,13 +25,16 @@ Register the create callback for the ribbon and existing bulk-create command. Re
 
 This explicit split is preferred over a boolean or mode parameter because each command has one obvious effect and the creation path cannot depend on persisted preview state.
 
+Each bulk callback computes the missing-file list once. If it is empty, the callback creates an Obsidian `Notice` with the shared user-facing message and returns early. The checks remain directly in `main.ts`; no helper module or command-only test seam is introduced.
+
 ## Documentation
 
 Update the README so the feature list, configuration, usage, and limitations describe the list command instead of the removed setting.
 
 ## Testing and verification
 
-- Add regression coverage that distinguishes the list action from the create action and confirms the dry-run setting definition is gone.
+- Keep regression coverage confirming the dry-run setting definition is gone.
+- Retain the existing command structure requested by the user; validate the notice change through the existing test suite, lint, production build, and a manual empty-result smoke test in Obsidian.
 - Run the complete test suite.
 - Run ESLint.
 - Run the production TypeScript/esbuild build.
