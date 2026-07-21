@@ -1,92 +1,133 @@
-# Obsidian Sample Plugin
+# Daily Notes from Others
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Daily Notes from Others creates missing [Obsidian](https://obsidian.md) daily notes from dates found in the filenames of other notes.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+It is useful when another app or workflow creates dated notes—voice notes, meeting notes, journal imports, or similar files—and you want each date to have a corresponding Obsidian daily note. The plugin reads the date from the source filename and asks Obsidian to create the normal daily note for that date. It does not copy or merge the source note's contents.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+## Features
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+- Finds valid dates anywhere in Markdown filenames inside a configured source folder.
+- Uses the filename portion of your existing **Daily notes** date format.
+- Creates every missing daily note from a ribbon action or command.
+- Creates the daily note associated with the active Markdown file.
+- Optionally watches for newly created source notes and creates daily notes automatically.
+- Offers a dry-run preview for bulk creation, with filtering and quick access to each source note.
+- Skips dates that already have daily notes and avoids duplicate work when several source notes share a date.
+- Shows an Obsidian notice after each successful creation and continues a batch if one file fails.
+- Runs locally without telemetry, accounts, or external services.
+- Supports desktop and mobile Obsidian.
 
-## First time developing plugins?
+## How date matching works
 
-Quick starting guide for new plugin devs:
+The plugin uses the last path segment of the date format configured in Obsidian's **Daily notes** core plugin. For example, a nested daily-note format of:
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
-
-## Releasing new releases
-
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
-
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
-
-## Adding your plugin to the community plugin list
-
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
+```text
+YYYY/MM/YYYY-MM-DD
 ```
 
-If you have multiple URLs, you can also do:
+uses `YYYY-MM-DD` when inspecting source filenames. All of these source notes therefore match July 16, 2026:
 
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
+```text
+2026-07-16 meeting.md
+Voice note 2026-07-16T1234.md
+Imported 999 2026-07-16 journal.md
 ```
 
-## API Documentation
+Running the plugin creates the daily note for `2026-07-16` using Obsidian's Daily notes configuration. Impossible dates such as `2026-02-31` and filenames without a matching date are ignored.
 
-See https://docs.obsidian.md
+## Requirements
+
+- Obsidian 1.13.0 or newer.
+- Obsidian's **Daily notes** core plugin configured with the folder, date format, and optional template you want to use.
+
+## Installation
+
+### Community plugins
+
+After the plugin is available in Obsidian's community catalog:
+
+1. Open **Settings → Community plugins**.
+2. Select **Browse** and search for “Daily Notes from Others.”
+3. Select **Install**, then **Enable**.
+
+### Manual installation
+
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest GitHub release](https://github.com/Kageetai/obsidian-daily-from-others-plugin/releases/latest).
+2. Create this folder inside your vault:
+
+    ```text
+    <Vault>/.obsidian/plugins/obsidian-daily-from-others-plugin/
+    ```
+
+3. Copy the three downloaded files into that folder.
+4. Reload Obsidian.
+5. Open **Settings → Community plugins** and enable **Daily Notes from Others**.
+
+## Configuration
+
+Open **Settings → Daily Notes from Others** and configure:
+
+- **Notes location**: Select the folder containing the dated source notes. The bulk scan and file watcher consider Markdown files whose paths start with this location. If no folder is selected, the bulk scan covers the entire vault.
+- **Watch file creation**: Automatically process new Markdown files created under **Notes location**. Reload the plugin after enabling or disabling this setting so the file watcher is registered correctly.
+- **Dry run**: Preview the source notes whose dates are missing daily notes instead of creating them when using the bulk action. Type in the preview to filter it, or select a result to open the source note. Dry run does not affect the active-file command or automatic file watching.
+
+## Usage
+
+### Create all missing daily notes
+
+Select the calendar-plus ribbon icon or run **Daily Notes from Others: Create all daily notes** from the command palette.
+
+The plugin scans **Notes location**, finds one source note for each date without an existing daily note, and creates the missing notes. Enable **Dry run** first if you want to inspect the candidates.
+
+### Create a daily note for the active file
+
+Open a Markdown source note and run **Daily Notes from Others: Create daily note for this file** from the command palette.
+
+If the filename contains a valid date in the configured format and that day's note does not exist, the plugin creates it. Otherwise, no new note is created.
+
+### Create daily notes automatically
+
+Enable **Watch file creation** and reload the plugin. When a new Markdown file appears under **Notes location**, the plugin checks its filename and creates the corresponding daily note when needed.
+
+## Behavior and limitations
+
+- The date must appear in the source filename; note properties and contents are not inspected.
+- At most one daily note is created per date, even if several source files contain that date.
+- Existing daily notes are never overwritten.
+- Source notes are not modified, linked, copied, or merged into the daily note.
+- **Dry run** applies only to the bulk ribbon/command action.
+- Individual creation failures are written to the developer console, and the remaining files in a batch are still processed.
+
+## Privacy
+
+Daily Notes from Others operates entirely inside your Obsidian vault. It makes no network requests, collects no analytics or telemetry, and sends no filenames, note contents, or settings to third parties.
+
+## Development
+
+This project uses TypeScript, npm, and esbuild.
+
+```bash
+npm ci
+npm run dev
+```
+
+`npm run dev` watches the source and rebuilds `main.js`. Reload Obsidian after rebuilding the plugin.
+
+Before submitting changes, run the complete validation suite:
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+## Releasing
+
+1. Update the version in `package.json` and `manifest.json`.
+2. Add the version-to-minimum-Obsidian mapping to `versions.json`.
+3. Create a Git tag matching the version exactly, without a leading `v`.
+4. Attach `main.js`, `manifest.json`, and `styles.css` to the GitHub release.
+
+## License
+
+[0BSD](LICENSE)
