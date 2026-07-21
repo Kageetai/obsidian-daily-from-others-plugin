@@ -4,7 +4,7 @@
 
 **Goal:** Remove the persisted dry-run toggle and add an on-demand **List all missing daily notes** command while keeping all creation actions immediate.
 
-**Architecture:** Keep command registration in `main.ts`, using explicit create/list callbacks so each action has one effect. Extract only the settings configuration so Node's built-in test runner can verify the active settings without loading Obsidian's runtime.
+**Architecture:** Keep command registration in `main.ts`, using explicit create/list callbacks so each action has one effect. Both callbacks handle an empty result directly with the same Obsidian notice. Extract only the settings configuration so Node's built-in test runner can verify the active settings without loading Obsidian's runtime.
 
 **Tech Stack:** TypeScript 5.8, Obsidian 1.13 API, Node.js built-in test runner, esbuild, ESLint.
 
@@ -14,6 +14,7 @@
 - The new list action is command-palette-only; do not add a ribbon icon.
 - The existing ribbon and **Create all daily notes** command always create notes immediately.
 - Listing notes must not create or modify notes.
+- If either bulk command finds no missing notes, show exactly `No missing daily notes found.` and return without creating notes or opening a modal.
 - Ignore legacy saved `dryRun` data; do not add a migration.
 - Keep the plugin local/offline and compatible with desktop and mobile Obsidian.
 - Do not commit generated `main.js` or dependencies.
@@ -168,7 +169,7 @@ Expected: 1 test passes, 0 fail.
 
 Run: `npm test`
 
-Expected: all command, settings, and filename tests pass.
+Expected: all settings and filename tests pass.
 
 - [ ] **Step 5: Commit the settings removal**
 
@@ -226,3 +227,58 @@ Expected: no whitespace errors.
 git add README.md
 git commit -m "docs: document list missing daily notes command"
 ```
+
+### Task 4: Show a notice when no daily notes are missing
+
+**Files:**
+- Modify: `src/main.ts:84-90`
+
+**Interfaces:**
+- Consumes: `findAllMissingDailyNotes(): TFile[]`, `createDailyNotes(files: TFile[])`, `Notice`, and `ResultsModal`.
+- Produces: empty-result handling in `createAllDailyNotes()` and `listAllMissingDailyNotes()`.
+
+- [ ] **Step 1: Confirm the reported empty-result behavior**
+
+Inspect `src/main.ts` and confirm `createAllDailyNotes()` passes an empty array into `createDailyNotes()`, whose loop produces no feedback, while `listAllMissingDailyNotes()` opens `ResultsModal` with an empty array.
+
+Expected: both reported paths are present before the fix. Per the user's explicit direction, do not introduce a command helper/module or command-only test seam.
+
+- [ ] **Step 2: Add the direct early-return notice**
+
+Replace the two callbacks with:
+
+```ts
+	createAllDailyNotes = () => {
+		const files = this.findAllMissingDailyNotes();
+		if (files.length === 0) {
+			new Notice('No missing daily notes found.');
+			return;
+		}
+		void this.createDailyNotes(files);
+	};
+
+	listAllMissingDailyNotes = () => {
+		const files = this.findAllMissingDailyNotes();
+		if (files.length === 0) {
+			new Notice('No missing daily notes found.');
+			return;
+		}
+		new ResultsModal(this.app, files).open();
+	};
+```
+
+- [ ] **Step 3: Run complete verification**
+
+Run `npm test`, `npm run lint`, `npm run build`, and `git diff --check`.
+
+Expected: 7 tests pass; ESLint, TypeScript/esbuild, and whitespace checks exit 0.
+
+- [ ] **Step 4: Commit and push the review fix**
+
+```bash
+git add src/main.ts
+git commit -m "fix: show notice when no daily notes are missing"
+git push
+```
+
+Confirm the branch is clean and synchronized with `origin/codex/list-missing-daily-notes`.
