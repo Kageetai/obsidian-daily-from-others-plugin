@@ -1,7 +1,7 @@
 {
 	"id": "daily-from-others-plugin",
 	"name": "Daily Notes from Others",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.13.0",
 	"description": "Obsidian Plugin to create daily notes from other \"daily notes\"",
 	"author": "Kageetai",

@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-daily-from-others-plugin",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Obsidian Plugin to create daily notes from other \"daily notes\"",
 	"main": "main.js",
 	"type": "module",
