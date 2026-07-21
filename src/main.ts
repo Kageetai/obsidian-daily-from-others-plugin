@@ -111,7 +111,7 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-modal-simple',
+			id: 'create-all-daily-notes',
 			name: 'Create all daily notes',
 			callback: this.createAllDailyNotes,
 		});
