@@ -1,7 +1,7 @@
 {
 	"id": "daily-from-others",
 	"name": "Daily Notes from Others",
-	"version": "1.0.1",
+	"version": "1.0.3",
 	"minAppVersion": "1.13.0",
 	"description": "Create daily notes from other \"daily notes\", e.g. other folders etc. as reference.",
 	"author": "Kageetai",
