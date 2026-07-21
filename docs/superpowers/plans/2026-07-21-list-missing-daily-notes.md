@@ -200,7 +200,7 @@ Make these exact content changes:
 
 Run: `rg -n -i 'dry.?run|list all missing daily notes' README.md src tests`
 
-Expected: no dry-run matches; the new command name appears in the README, source, and command test.
+Expected: no dry-run matches; the new command name appears in the README and `src/main.ts`.
 
 - [ ] **Step 3: Run complete verification**
 
