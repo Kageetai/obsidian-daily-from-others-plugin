@@ -4,7 +4,7 @@
 
 **Goal:** Remove the persisted dry-run toggle and add an on-demand **List all missing daily notes** command while keeping all creation actions immediate.
 
-**Architecture:** Extract pure command definitions and pure settings configuration so Node's built-in test runner can verify the user-visible registration without loading Obsidian's runtime. `main.ts` remains the lifecycle coordinator: it supplies create/list callbacks to the command definitions, registers the ribbon with create behavior, and retains the active-file command.
+**Architecture:** Keep command registration in `main.ts`, using explicit create/list callbacks so each action has one effect. Extract only the settings configuration so Node's built-in test runner can verify the active settings without loading Obsidian's runtime.
 
 **Tech Stack:** TypeScript 5.8, Obsidian 1.13 API, Node.js built-in test runner, esbuild, ESLint.
 
@@ -20,97 +20,18 @@
 
 ---
 
-### Task 1: Separate bulk command definitions and behaviors
+### Task 1: Separate bulk command behaviors in the plugin lifecycle
 
 **Files:**
-- Create: `src/commands.ts`
 - Modify: `src/main.ts:1-91`
-- Test: `tests/commands.test.mjs`
 
 **Interfaces:**
-- Consumes: two zero-argument callbacks, `createAll` and `listAll`, supplied by the plugin lifecycle.
-- Produces: `getBulkCommandDefinitions(actions: BulkCommandActions): BulkCommandDefinition[]`.
+- Consumes: the existing `findAllMissingDailyNotes`, `createDailyNotes`, and `ResultsModal` behavior.
+- Produces: two zero-argument callbacks, `createAllDailyNotes` and `listAllMissingDailyNotes`, registered directly in `main.ts`.
 
-- [ ] **Step 1: Write the failing command-registration tests**
+- [ ] **Step 1: Replace the setting-dependent callback with explicit actions**
 
-Create `tests/commands.test.mjs`:
-
-```js
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { getBulkCommandDefinitions } from '../src/commands.ts';
-
-void test('registers separate create and list commands', () => {
-	const commands = getBulkCommandDefinitions({
-		createAll: () => undefined,
-		listAll: () => undefined,
-	});
-
-	assert.deepEqual(
-		commands.map(({ id, name }) => ({ id, name })),
-		[
-			{ id: 'open-modal-simple', name: 'Create all daily notes' },
-			{
-				id: 'list-all-missing-daily-notes',
-				name: 'List all missing daily notes',
-			},
-		],
-	);
-});
-
-void test('each bulk command invokes only its matching action', () => {
-	const calls = [];
-	const commands = getBulkCommandDefinitions({
-		createAll: () => calls.push('create'),
-		listAll: () => calls.push('list'),
-	});
-
-	commands[0].callback();
-	commands[1].callback();
-
-	assert.deepEqual(calls, ['create', 'list']);
-});
-```
-
-- [ ] **Step 2: Run the new test and verify RED**
-
-Run: `node --test tests/commands.test.mjs`
-
-Expected: FAIL with `ERR_MODULE_NOT_FOUND` for `src/commands.ts`.
-
-- [ ] **Step 3: Add the minimal pure command definitions**
-
-Create `src/commands.ts`:
-
-```ts
-export interface BulkCommandActions {
-	createAll: () => void;
-	listAll: () => void;
-}
-
-export interface BulkCommandDefinition {
-	id: string;
-	name: string;
-	callback: () => void;
-}
-
-export const getBulkCommandDefinitions = (
-	actions: BulkCommandActions,
-): BulkCommandDefinition[] => [
-	{
-		id: 'open-modal-simple',
-		name: 'Create all daily notes',
-		callback: actions.createAll,
-	},
-	{
-		id: 'list-all-missing-daily-notes',
-		name: 'List all missing daily notes',
-		callback: actions.listAll,
-	},
-];
-```
-
-In `src/main.ts`, replace `openModalOrCreateDailyNotes` with explicit callbacks:
+Replace `openModalOrCreateDailyNotes` in `src/main.ts` with:
 
 ```ts
 	createAllDailyNotes = () => {
@@ -122,27 +43,37 @@ In `src/main.ts`, replace `openModalOrCreateDailyNotes` with explicit callbacks:
 	};
 ```
 
-Import `getBulkCommandDefinitions`, register the ribbon with `this.createAllDailyNotes`, and replace the existing bulk `addCommand` call with:
+- [ ] **Step 2: Register both commands directly in `main.ts`**
+
+Register the ribbon with `this.createAllDailyNotes`. Keep the existing creation command and add the listing command directly:
 
 ```ts
-		for (const command of getBulkCommandDefinitions({
-			createAll: this.createAllDailyNotes,
-			listAll: this.listAllMissingDailyNotes,
-		})) {
-			this.addCommand(command);
-		}
+		this.addCommand({
+			id: 'open-modal-simple',
+			name: 'Create all daily notes',
+			callback: this.createAllDailyNotes,
+		});
+		this.addCommand({
+			id: 'list-all-missing-daily-notes',
+			name: 'List all missing daily notes',
+			callback: this.listAllMissingDailyNotes,
+		});
 ```
 
-- [ ] **Step 4: Run the command tests and verify GREEN**
+- [ ] **Step 3: Run existing tests and the production build**
 
-Run: `node --test tests/commands.test.mjs`
+Run: `npm test`
 
-Expected: 2 tests pass, 0 fail.
+Expected: all existing tests pass.
 
-- [ ] **Step 5: Commit the command split**
+Run: `npm run build`
+
+Expected: TypeScript type-checking and the production esbuild bundle both exit 0.
+
+- [ ] **Step 4: Commit the command split**
 
 ```bash
-git add src/commands.ts src/main.ts tests/commands.test.mjs
+git add src/main.ts
 git commit -m "feat: add list missing daily notes command"
 ```
 
