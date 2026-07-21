@@ -1,11 +1,13 @@
 {
-	"id": "obsidian-daily-from-others-plugin",
+	"id": "daily-from-others-plugin",
 	"name": "Daily Notes from Others",
 	"version": "1.0.0",
 	"minAppVersion": "1.13.0",
 	"description": "Obsidian Plugin to create daily notes from other \"daily notes\"",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"author": "Kageetai",
+	"authorUrl": "https://kageetai.net",
+	"isDesktopOnly": false,
+	"fundingUrl": {
+		"Ko-Fi": "https://ko-fi.com/kageetai"
+	}
 }
