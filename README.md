@@ -11,7 +11,7 @@ It is useful when another app or workflow creates dated notes—voice notes, mee
 - Creates every missing daily note from a ribbon action or command.
 - Creates the daily note associated with the active Markdown file.
 - Optionally watches for newly created source notes and creates daily notes automatically.
-- Offers a dry-run preview for bulk creation, with filtering and quick access to each source note.
+- Lists one source note for each date missing a daily note, with filtering and quick access to the source note.
 - Skips dates that already have daily notes and avoids duplicate work when several source notes share a date.
 - Shows an Obsidian notice after each successful creation and continues a batch if one file fails.
 - Runs locally without telemetry, accounts, or external services.
@@ -69,7 +69,6 @@ Open **Settings → Daily Notes from Others** and configure:
 
 - **Notes location**: Select the folder containing the dated source notes. The bulk scan and file watcher consider Markdown files whose paths start with this location. If no folder is selected, the bulk scan covers the entire vault.
 - **Watch file creation**: Automatically process new Markdown files created under **Notes location**. Reload the plugin after enabling or disabling this setting so the file watcher is registered correctly.
-- **Dry run**: Preview the source notes whose dates are missing daily notes instead of creating them when using the bulk action. Type in the preview to filter it, or select a result to open the source note. Dry run does not affect the active-file command or automatic file watching.
 
 ## Usage
 
@@ -77,7 +76,13 @@ Open **Settings → Daily Notes from Others** and configure:
 
 Select the calendar-plus ribbon icon or run **Daily Notes from Others: Create all daily notes** from the command palette.
 
-The plugin scans **Notes location**, finds one source note for each date without an existing daily note, and creates the missing notes. Enable **Dry run** first if you want to inspect the candidates.
+The plugin scans **Notes location**, finds one source note for each date without an existing daily note, and creates the missing notes.
+
+### List all missing daily notes
+
+Run **Daily Notes from Others: List all missing daily notes** from the command palette.
+
+The plugin scans **Notes location** and opens a filterable list with one source note for each date missing a daily note. Select a result to open its source note; this command does not create anything.
 
 ### Create a daily note for the active file
 
@@ -95,7 +100,6 @@ Enable **Watch file creation** and reload the plugin. When a new Markdown file a
 - At most one daily note is created per date, even if several source files contain that date.
 - Existing daily notes are never overwritten.
 - Source notes are not modified, linked, copied, or merged into the daily note.
-- **Dry run** applies only to the bulk ribbon/command action.
 - Individual creation failures are written to the developer console, and the remaining files in a batch are still processed.
 
 ## Privacy

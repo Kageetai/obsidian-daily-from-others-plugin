@@ -1,5 +1,6 @@
 import { MarkdownView, moment, Plugin, TFile, Notice } from 'obsidian';
-import { DEFAULT_SETTINGS, PluginSettings, SettingsTab } from './settings';
+import { SettingsTab } from './settings';
+import { DEFAULT_SETTINGS, PluginSettings } from './settingsConfig';
 import {
 	createDailyNote,
 	DEFAULT_DAILY_NOTE_FORMAT,
@@ -80,15 +81,22 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 		}
 	};
 
-	openModalOrCreateDailyNotes = () => {
+	createAllDailyNotes = () => {
 		const files = this.findAllMissingDailyNotes();
-
-		if (this.settings.dryRun) {
-			new ResultsModal(this.app, files).open();
+		if (files.length === 0) {
+			new Notice('No missing daily notes found.');
 			return;
 		}
-
 		void this.createDailyNotes(files);
+	};
+
+	listAllMissingDailyNotes = () => {
+		const files = this.findAllMissingDailyNotes();
+		if (files.length === 0) {
+			new Notice('No missing daily notes found.');
+			return;
+		}
+		new ResultsModal(this.app, files).open();
 	};
 
 	async onload() {
@@ -98,14 +106,19 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 		this.addRibbonIcon(
 			'calendar-plus',
 			'Create all daily notes',
-			this.openModalOrCreateDailyNotes,
+			this.createAllDailyNotes,
 		);
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-modal-simple',
+			id: 'create-all-daily-notes',
 			name: 'Create all daily notes',
-			callback: this.openModalOrCreateDailyNotes,
+			callback: this.createAllDailyNotes,
+		});
+		this.addCommand({
+			id: 'list-all-missing-daily-notes',
+			name: 'List all missing daily notes',
+			callback: this.listAllMissingDailyNotes,
 		});
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
