@@ -1,4 +1,4 @@
-import { MarkdownView, moment, Plugin, TFile } from 'obsidian';
+import { MarkdownView, moment, Plugin, TFile, Notice } from 'obsidian';
 import { DEFAULT_SETTINGS, PluginSettings, SettingsTab } from './settings';
 import {
 	createDailyNote,
@@ -67,6 +67,9 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 				const createdFile = await createDailyNote(date);
 				if (createdFile) {
 					existingOrCreatedDates.add(dateUid);
+					new Notice(
+						'New daily note created for note: ' + file.basename,
+					);
 				}
 			} catch (error) {
 				console.error(
