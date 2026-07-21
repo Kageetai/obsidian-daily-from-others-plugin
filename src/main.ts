@@ -1,5 +1,6 @@
 import { MarkdownView, moment, Plugin, TFile, Notice } from 'obsidian';
-import { DEFAULT_SETTINGS, PluginSettings, SettingsTab } from './settings';
+import { SettingsTab } from './settings';
+import { DEFAULT_SETTINGS, PluginSettings } from './settingsConfig';
 import {
 	createDailyNote,
 	DEFAULT_DAILY_NOTE_FORMAT,
