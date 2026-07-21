@@ -11,6 +11,7 @@
 ## Global Constraints
 
 - The new command name is exactly **List all missing daily notes** and its stable ID is `list-all-missing-daily-notes`.
+- The **Create all daily notes** command ID is exactly `create-all-daily-notes`; remove the previous `open-modal-simple` ID even though existing `1.0.0` hotkeys will need reassignment.
 - The new list action is command-palette-only; do not add a ribbon icon.
 - The existing ribbon and **Create all daily notes** command always create notes immediately.
 - Listing notes must not create or modify notes.
@@ -50,7 +51,7 @@ Register the ribbon with `this.createAllDailyNotes`. Keep the existing creation 
 
 ```ts
 		this.addCommand({
-			id: 'open-modal-simple',
+			id: 'create-all-daily-notes',
 			name: 'Create all daily notes',
 			callback: this.createAllDailyNotes,
 		});
@@ -278,6 +279,56 @@ Expected: 7 tests pass; ESLint, TypeScript/esbuild, and whitespace checks exit 0
 ```bash
 git add src/main.ts
 git commit -m "fix: show notice when no daily notes are missing"
+git push
+```
+
+Confirm the branch is clean and synchronized with `origin/codex/list-missing-daily-notes`.
+
+### Task 5: Rename the bulk-create command ID
+
+**Files:**
+- Modify: `src/main.ts:114`
+
+**Interfaces:**
+- Consumes: the existing **Create all daily notes** command registration.
+- Produces: the descriptive stable command ID `create-all-daily-notes`.
+
+- [ ] **Step 1: Replace the command ID**
+
+Change only the command registration ID:
+
+```ts
+		this.addCommand({
+			id: 'create-all-daily-notes',
+			name: 'Create all daily notes',
+			callback: this.createAllDailyNotes,
+		});
+```
+
+Do not add an alias command for `open-modal-simple`; the user accepted that existing version `1.0.0` hotkey assignments will need to be reassigned.
+
+- [ ] **Step 2: Verify source consistency**
+
+Run:
+
+```bash
+test "$(rg -o 'create-all-daily-notes' src/main.ts | wc -l | tr -d ' ')" = "1"
+! rg -n 'open-modal-simple' src
+```
+
+Expected: both commands exit 0; the new ID occurs exactly once in `src/main.ts`, and the old ID is absent from source.
+
+- [ ] **Step 3: Run complete verification**
+
+Run `npm test`, `npm run lint`, `npm run build`, and `git diff --check`.
+
+Expected: 7 tests pass; ESLint, TypeScript/esbuild, and whitespace checks exit 0.
+
+- [ ] **Step 4: Commit and push the command-ID update**
+
+```bash
+git add src/main.ts
+git commit -m "refactor: rename create command id"
 git push
 ```
 
