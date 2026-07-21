@@ -82,11 +82,21 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 	};
 
 	createAllDailyNotes = () => {
-		void this.createDailyNotes(this.findAllMissingDailyNotes());
+		const files = this.findAllMissingDailyNotes();
+		if (files.length === 0) {
+			new Notice('No missing daily notes found.');
+			return;
+		}
+		void this.createDailyNotes(files);
 	};
 
 	listAllMissingDailyNotes = () => {
-		new ResultsModal(this.app, this.findAllMissingDailyNotes()).open();
+		const files = this.findAllMissingDailyNotes();
+		if (files.length === 0) {
+			new Notice('No missing daily notes found.');
+			return;
+		}
+		new ResultsModal(this.app, files).open();
 	};
 
 	async onload() {
