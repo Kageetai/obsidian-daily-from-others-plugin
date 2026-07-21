@@ -80,15 +80,12 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 		}
 	};
 
-	openModalOrCreateDailyNotes = () => {
-		const files = this.findAllMissingDailyNotes();
+	createAllDailyNotes = () => {
+		void this.createDailyNotes(this.findAllMissingDailyNotes());
+	};
 
-		if (this.settings.dryRun) {
-			new ResultsModal(this.app, files).open();
-			return;
-		}
-
-		void this.createDailyNotes(files);
+	listAllMissingDailyNotes = () => {
+		new ResultsModal(this.app, this.findAllMissingDailyNotes()).open();
 	};
 
 	async onload() {
@@ -98,14 +95,19 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 		this.addRibbonIcon(
 			'calendar-plus',
 			'Create all daily notes',
-			this.openModalOrCreateDailyNotes,
+			this.createAllDailyNotes,
 		);
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: 'open-modal-simple',
 			name: 'Create all daily notes',
-			callback: this.openModalOrCreateDailyNotes,
+			callback: this.createAllDailyNotes,
+		});
+		this.addCommand({
+			id: 'list-all-missing-daily-notes',
+			name: 'List all missing daily notes',
+			callback: this.listAllMissingDailyNotes,
 		});
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
