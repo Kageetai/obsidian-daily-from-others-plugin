@@ -69,6 +69,8 @@ Open **Settings → Daily Notes from Others** and configure:
 
 - **Notes location**: Select the folder containing the dated source notes. The bulk scan and file watcher consider Markdown files whose paths start with this location. If no folder is selected, the bulk scan covers the entire vault.
 - **Watch file creation**: Automatically process new Markdown files created under **Notes location**. Reload the plugin after enabling or disabling this setting so the file watcher is registered correctly.
+- **Debounce delay (ms)**: Wait this long after a source note appears before processing it (default: 500 ms).
+- **Wait for Obsidian Sync**: Enabled by default. Queue automatic creation until Obsidian Sync on this device reports that it has fully synced. This setting takes effect immediately; manual commands remain available.
 
 ## Usage
 
@@ -94,6 +96,10 @@ If the filename contains a valid date in the configured format and that day's no
 
 Enable **Watch file creation** and reload the plugin. When a new Markdown file appears under **Notes location**, the plugin checks its filename and creates the corresponding daily note when needed.
 
+With **Wait for Obsidian Sync** enabled, the plugin first waits for both the creation delay and confirmation that local Sync has finished. It then checks again for an existing daily note, which may have arrived during Sync. Sources deleted while waiting are skipped, and pending work is canceled when the plugin unloads.
+
+If the Sync core plugin is disabled, automatic creation uses only the configured delay. If Sync is enabled but paused, disconnected, or reporting an error, automatic creation stays queued until Sync finishes. If the internal API cannot be read, a one-time notice explains that creation is waiting. You can use a manual command or disable **Wait for Obsidian Sync** to proceed.
+
 ## Behavior and limitations
 
 - The date must appear in the source filename; note properties and contents are not inspected.
@@ -101,6 +107,8 @@ Enable **Watch file creation** and reload the plugin. When a new Markdown file a
 - Existing daily notes are never overwritten.
 - Source notes are not modified, linked, copied, or merged into the daily note.
 - Individual creation failures are written to the developer console, and the remaining files in a batch are still processed.
+- Sync detection uses undocumented internal APIs and may need updating after an Obsidian release. It listens for local status changes and checks once per second as a fallback. The implementation was checked against installed desktop Obsidian 1.14.3; it still needs testing on a phone.
+- Local Sync completion does not guarantee another device has uploaded all its changes, or prevent simultaneous creation on multiple devices. Other sync services, such as iCloud, are not detected.
 
 ## Privacy
 

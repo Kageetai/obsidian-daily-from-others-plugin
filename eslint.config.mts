@@ -44,4 +44,11 @@ export default defineConfig(
 			'obsidianmd/no-nodejs-modules': 'off',
 		},
 	},
+	{
+		files: ['tests/automaticNoteCreation.test.mjs'],
+		rules: {
+			// The Node test host supplies Obsidian's window, app, and timers via global.window.
+			'obsidianmd/no-global-this': 'off',
+		},
+	},
 );
