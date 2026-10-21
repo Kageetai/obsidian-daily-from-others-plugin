@@ -1,6 +1,10 @@
 import { MarkdownView, moment, Plugin, TFile, Notice } from 'obsidian';
 import { SettingsTab } from './settings';
-import { DEFAULT_SETTINGS, PluginSettings } from './settingsConfig';
+import {
+	DEFAULT_SETTINGS,
+	normalizeDebounceDelay,
+	PluginSettings,
+} from './settingsConfig';
 import {
 	createDailyNote,
 	DEFAULT_DAILY_NOTE_FORMAT,
@@ -13,9 +17,11 @@ import {
 	findDateInFilename,
 	getFilenameDateFormat,
 } from './utils/findDateInFilename';
+import { registerAutomaticNoteCreation } from './automaticNoteCreation';
 
 export default class DailyNotesFromOthersPlugin extends Plugin {
 	settings!: PluginSettings;
+	private unloaded = false;
 
 	getFormat = () =>
 		getFilenameDateFormat(
@@ -100,6 +106,7 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 	};
 
 	async onload() {
+		this.unloaded = false;
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
@@ -145,16 +152,11 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 
 		if (this.settings.watchFileCreation) {
 			this.app.workspace.onLayoutReady(() => {
-				this.registerEvent(
-					this.app.vault.on('create', (file) => {
-						if (
-							file instanceof TFile &&
-							file.path.startsWith(this.settings.notesLocation)
-						) {
-							void this.createDailyNotes([file]);
-						}
-					}),
-				);
+				if (this.unloaded) {
+					return;
+				}
+
+				registerAutomaticNoteCreation(this);
 			});
 		}
 
@@ -162,13 +164,15 @@ export default class DailyNotesFromOthersPlugin extends Plugin {
 		this.addSettingTab(new SettingsTab(this.app, this));
 	}
 
-	onunload() {}
+	onunload() {
+		this.unloaded = true;
+	}
 
 	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<PluginSettings>,
-		);
+		const savedSettings =
+			(await this.loadData()) as Partial<PluginSettings>;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings, {
+			debounceDelay: normalizeDebounceDelay(savedSettings?.debounceDelay),
+		});
 	}
 }
